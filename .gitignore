@@ -1,0 +1,23 @@
+# --- Java ---
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.zip
+
+# --- IDEs (IntelliJ, Eclipse, VS Code) ---
+.idea/
+*.iml
+.vscode/
+bin/
+out/
+target/
+build/
+.settings/
+.classpath
+.project
+
+# --- OS ---
+.DS_Store
+Thumbs.db
