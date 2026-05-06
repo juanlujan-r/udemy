@@ -142,23 +142,19 @@ class UdemyDownloader:
         """
         Intenta obtener una URL descargable directa (MP4).
         Retorna (url, quality_label, source_type) donde source_type es
-        'download', 'stream' o 'drm'.
+        'download', 'stream', 'hls' o 'drm'.
         """
-        # MP4 directos (sin DRM, mejor opción)
-        downloads = asset.get("download_urls", {}).get("Video", [])
+        # La API puede devolver null en lugar de {} para estos campos
+        downloads = (asset.get("download_urls") or {}).get("Video", [])
         if downloads:
             url, label = self._pick_url(downloads)
             if url:
                 return url, label, "download"
 
-        # Streams HLS (sin DRM, requiere ensamblar segmentos — se descarga igual
-        # porque yt-dlp/ffmpeg maneja m3u8, pero aquí lo intentamos con requests).
-        # En la mayoría de los casos, si no hay download_urls es contenido DRM.
-        streams = asset.get("stream_urls", {}).get("Video", [])
+        streams = (asset.get("stream_urls") or {}).get("Video", [])
         if streams:
             url, label = self._pick_url(streams)
             if url:
-                # Si la URL termina en .m3u8 no podemos descargarla con requests solo
                 if ".m3u8" in url or "hls" in url.lower():
                     return url, label, "hls"
                 return url, label, "stream"
@@ -230,11 +226,11 @@ class UdemyDownloader:
                 print(f"\n  [{chapter_idx:02d}] {item.get('title', '')}")
 
             elif kind == "lecture":
-                asset = item.get("asset", {})
+                # La API puede devolver asset=null en lecturas sin video
+                asset = item.get("asset") or {}
                 asset_type = asset.get("asset_type", "")
 
                 if asset_type != "Video":
-                    # Ignorar artículos, archivos adjuntos, quizzes, etc.
                     continue
 
                 lecture_counter += 1
@@ -347,9 +343,7 @@ def main():
 
     try:
         if args.course_id:
-            # Modo directo: el usuario ya sabe el ID
             course = {"id": args.course_id, "title": f"Curso_{args.course_id}"}
-            # Intentar obtener el título real
             try:
                 info = downloader._get(
                     f"{BASE_URL}/courses/{args.course_id}/",
